@@ -20,7 +20,12 @@
   "homepage": "https://github.com/AhmadAdas21/usage-metering-quota-service#readme",
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "pg": "^8.23.1"
   }
 }
