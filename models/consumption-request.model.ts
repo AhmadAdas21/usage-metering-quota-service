@@ -1,4 +1,4 @@
-import type { PlanRules, PlanScope } from "./plan.model";
+import type { PlanRules, PlanScope } from "./plan.model.js";
 import type { UsageMonth } from "./monthly-usage.model";
 
 export type RejectionRule =
