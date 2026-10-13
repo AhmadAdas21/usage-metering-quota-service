@@ -1,25 +1,39 @@
 export type PlanScope = "account" | "user";
-
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
 export interface PlanRules {
   monthlyAllowance: number;
   maxUnitsPerRequest: number;
 }
+@Entity("plans")
+export class Plan {
+  @PrimaryGeneratedColumn("uuid")
+   @Column({ type: "varchar", length: 100 })
+ id!: string;
 
-export interface Plan {
-  id: string;
-  name: string;
+  @Column({ type: "varchar", length: 100 })
+  name!: string;
 
-  
-  scope: PlanScope;
+  @Column({ type: "enum", enum: ["account", "user"] })
+  scope!: PlanScope;
 
-  
-  ownerAccountId: string | null;
+  @Column({ type: "uuid", nullable: true })
+  ownerAccountId!: string | null;
 
-  rules: PlanRules;
+  @Column({ type: "jsonb" })
+  rules!: PlanRules;
 
- 
-  version: number;
+  @Column({ type: "integer", default: 1 })
+  version!: number;
 
-  createdAt: Date;
-  updatedAt: Date;
+  @CreateDateColumn({ type: "timestamptz" })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: "timestamptz" })
+  updatedAt!: Date;
 }
