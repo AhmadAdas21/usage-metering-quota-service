@@ -13,7 +13,7 @@ export interface PlanRules {
 @Entity("plans")
 export class Plan {
   @PrimaryGeneratedColumn("uuid")
-   @Column({ type: "varchar", length: 100 })
+  
  id!: string;
 
   @Column({ type: "varchar", length: 100 })
