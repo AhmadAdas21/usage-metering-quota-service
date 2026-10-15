@@ -18,14 +18,17 @@ export function errorHandler(
   }
 
   if (error instanceof ApplicationError) {
-    res.status(400).json({
-      error: {
-        code: error.code,
-        message: error.message,
-      },
-    });
-    return;
-  }
+  const status =
+    error.code === "USER_ALREADY_EXISTS" ? 409 : 400;
+
+  res.status(status).json({
+    error: {
+      code: error.code,
+      message: error.message,
+    },
+  });
+  return;
+}
 
   if (
     error instanceof SyntaxError &&

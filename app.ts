@@ -7,7 +7,7 @@ import { Account } from "./models/account.model";
 import { createServices } from "./composition/services";
 import { createAccountRouter } from "./routes/account.routes";
 import { errorHandler } from "./middleware/error-handler";
-
+import { createUserRouter } from "./routes/user.routes";
 export function createApp(dataSource: DataSource): Express {
   const app = express();
   const services = createServices(dataSource);
@@ -24,6 +24,11 @@ app.get("/accounts/me", apiKeyAuth, (_req, res) => {
     account: res.locals.account,
   });
 });
+app.use(
+  "/users",
+  apiKeyAuth,
+  createUserRouter(services.userService),
+);
   app.use((_req, res) => {
     res.status(404).json({
       error: {
