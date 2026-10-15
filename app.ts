@@ -1,7 +1,9 @@
 import express from "express";
+
 import type { Express } from "express";
 import type { DataSource } from "typeorm";
-
+import { createApiKeyAuth } from "./middleware/api-key-authintication";
+import { Account } from "./models/account.model";
 import { createServices } from "./composition/services";
 import { createAccountRouter } from "./routes/account.routes";
 import { errorHandler } from "./middleware/error-handler";
@@ -13,6 +15,15 @@ export function createApp(dataSource: DataSource): Express {
   app.disable("x-powered-by");
   app.use(express.json({ limit: "16kb" }));
   app.use( "/accounts",createAccountRouter(services.accountService),);
+  const apiKeyAuth = createApiKeyAuth(
+  dataSource.getRepository(Account),
+);
+
+app.get("/accounts/me", apiKeyAuth, (_req, res) => {
+  res.status(200).json({
+    account: res.locals.account,
+  });
+});
   app.use((_req, res) => {
     res.status(404).json({
       error: {
