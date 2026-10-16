@@ -24,6 +24,7 @@ export function errorHandler(
   error.code === "ACCOUNT_NOT_FOUND"
     ? 404
     : error.code === "USER_ALREADY_EXISTS" ||
+    error.code === "REQUEST_ID_CONFLICT" ||
         error.code === "PLAN_VERSION_CONFLICT"
       ? 409
       : 400
