@@ -5,7 +5,9 @@ export type ApplicationErrorCode =
   | "INVALID_EXTERNAL_ID"
   | "USER_ALREADY_EXISTS"
     | "INVALID_PLAN_NAME"
-  | "INVALID_PLAN_RULES" |"INVALID_PLAN_VERSION";
+  | "INVALID_PLAN_RULES" |"INVALID_PLAN_VERSION"
+   | "PLAN_NOT_FOUND"
+  | "PLAN_VERSION_CONFLICT";
 
 export class ApplicationError extends Error {
   constructor(
