@@ -11,5 +11,6 @@ export function createPlanRouter(
 
   router.get("/", controller.listPlans);
   router.post("/", controller.createPlan);
+  router.put("/:planId", controller.updatePlan);
   return router;
 }
