@@ -8,3 +8,8 @@ export interface CreatePlanRequest {
   scope: PlanScope;
   rules: PlanRules;
 }
+export interface UpdatePlanRequest {
+  name: string;
+  rules: PlanRules;
+  expectedVersion: number;
+}
