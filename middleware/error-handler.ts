@@ -19,13 +19,15 @@ export function errorHandler(
 
   if (error instanceof ApplicationError) {
  const status =
+ error.code === "USER_NOT_FOUND" ||
   error.code === "PLAN_NOT_FOUND" ||
   error.code === "ACCOUNT_NOT_FOUND"
     ? 404
     : error.code === "USER_ALREADY_EXISTS" ||
         error.code === "PLAN_VERSION_CONFLICT"
       ? 409
-      : 400;
+      : 400
+      ;
 
   res.status(status).json({
     error: {

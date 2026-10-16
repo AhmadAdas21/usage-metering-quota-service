@@ -7,7 +7,10 @@ export type ApplicationErrorCode =
     | "INVALID_PLAN_NAME"
   | "INVALID_PLAN_RULES" |"INVALID_PLAN_VERSION"
    | "PLAN_NOT_FOUND"
-  | "PLAN_VERSION_CONFLICT" | "ACCOUNT_NOT_FOUND";;
+  | "PLAN_VERSION_CONFLICT" | "ACCOUNT_NOT_FOUND"
+  | "INVALID_USER_ID"
+| "USER_NOT_FOUND";
+
 
 export class ApplicationError extends Error {
   constructor(
