@@ -1,8 +1,12 @@
-import type { Request, Response, NextFunction } from "express";
 
+import type {
+  Request,
+  Response,
+  NextFunction,
+} from "express";
 import type { AccountService } from "../services/account.service";
 import { validateCreateAccount } from "../validation/create-account.validation";
-
+import { validateChangePlan } from "../validation/change-plan.validation";
 export class AccountController {
   constructor(
     private readonly accountService: AccountService,
@@ -21,6 +25,25 @@ export class AccountController {
 
       res.setHeader("Cache-Control", "no-store");
       res.status(201).json(result);
+    } catch (error: unknown) {
+      next(error);
+    }
+  };
+  changePlan = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const request = validateChangePlan(req.body);
+
+      const result = await this.accountService.changePlan(
+        res.locals.account.id,
+        request,
+      );
+
+      res.setHeader("Cache-Control", "no-store");
+      res.status(200).json(result);
     } catch (error: unknown) {
       next(error);
     }

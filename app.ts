@@ -15,10 +15,11 @@ export function createApp(dataSource: DataSource): Express {
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "16kb" }));
-  app.use( "/accounts",createAccountRouter(services.accountService),);
+ // app.use( "/accounts",createAccountRouter(services.accountService),);
   const apiKeyAuth = createApiKeyAuth(
   dataSource.getRepository(Account),
 );
+app.use("/accounts",createAccountRouter(services.accountService, apiKeyAuth),);
 
 app.get("/accounts/me", apiKeyAuth, (_req, res) => {
   res.status(200).json({
