@@ -8,16 +8,18 @@ import { createServices } from "./composition/services";
 import { createAccountRouter } from "./routes/account.routes";
 import { errorHandler } from "./middleware/error-handler";
 import { createUserRouter } from "./routes/user.routes";
+import { createPlanRouter } from "./routes/plan.router";
 export function createApp(dataSource: DataSource): Express {
   const app = express();
   const services = createServices(dataSource);
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "16kb" }));
-  app.use( "/accounts",createAccountRouter(services.accountService),);
+ // app.use( "/accounts",createAccountRouter(services.accountService),);
   const apiKeyAuth = createApiKeyAuth(
   dataSource.getRepository(Account),
 );
+app.use("/accounts",createAccountRouter(services.accountService, apiKeyAuth),);
 
 app.get("/accounts/me", apiKeyAuth, (_req, res) => {
   res.status(200).json({
@@ -28,6 +30,11 @@ app.use(
   "/users",
   apiKeyAuth,
   createUserRouter(services.userService),
+);
+app.use(
+  "/plans",
+  apiKeyAuth,
+  createPlanRouter(services.planService),
 );
   app.use((_req, res) => {
     res.status(404).json({

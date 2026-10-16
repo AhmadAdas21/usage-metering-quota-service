@@ -8,6 +8,7 @@ import type {
 import { ApplicationError } from "../error/application-error";
 import { Account } from "../models/account.model";
 import { Plan } from "../models/plan.model";
+import type { ChangePlanRequest } from "../dtos/change-plan.dto";
 import {
   generateApiKey,
   hashApiKey,
@@ -75,5 +76,75 @@ export class AccountService {
       },
       apiKey,
     };
+    
   }
+  async changePlan(
+  accountId: string,
+  request: ChangePlanRequest,
+) {
+  if (!UUID_PATTERN.test(request.planId)) {
+    throw new ApplicationError(
+      "INVALID_PLAN_ID",
+      "Plan ID must be a valid UUID.",
+    );
+  }
+
+  return this.accountRepository.manager.transaction(
+    async (manager) => {
+      const accountRepository = manager.getRepository(Account);
+      const planRepository = manager.getRepository(Plan);
+
+      const account = await accountRepository.findOne({
+        where: {
+          id: accountId,
+        },
+        lock: {
+          mode: "pessimistic_write",
+        },
+      });
+
+      if (!account) {
+        throw new ApplicationError(
+          "ACCOUNT_NOT_FOUND",
+          "Account was not found.",
+        );
+      }
+
+      const plan = await planRepository.findOneBy([
+        {
+          id: request.planId,
+          scope: "account",
+          ownerAccountId: IsNull(),
+        },
+        {
+          id: request.planId,
+          scope: "account",
+          ownerAccountId: accountId,
+        },
+      ]);
+
+      if (!plan) {
+        throw new ApplicationError(
+          "PLAN_NOT_AVAILABLE",
+          "Choose an available account plan owned by your account or a predefined account plan.",
+        );
+      }
+
+      await accountRepository.update(
+        { id: accountId },
+        { planId: plan.id },
+      );
+
+      return {
+        account: {
+          id: account.id,
+          name: account.name,
+          planId: plan.id,
+          createdAt: account.createdAt.toISOString(),
+        },
+      };
+    },
+  );
+}
+  
 }

@@ -5,6 +5,7 @@ import { Plan } from "../models/plan.model";
 import { User } from "../models/user.model";
 
 import { AccountService } from "../services/account.service";
+import { PlanService } from "../services/plan.service";
 import { UserService } from "../services/user.service";
 
 export function createServices(dataSource: DataSource) {
@@ -20,8 +21,11 @@ export function createServices(dataSource: DataSource) {
     planRepository,
   );
 
+  const planService = new PlanService(planRepository);
+
   return {
     accountService,
     userService,
+    planService,
   };
 }
