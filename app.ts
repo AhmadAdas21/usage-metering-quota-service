@@ -46,7 +46,10 @@ app.use(
 app.use(
   "/usage",
   apiKeyAuth,
-  createUsageRouter(services.usageService),
+  createUsageRouter(
+    services.usageService,
+    services.usageHistoryService,
+  ),
 );
   app.use((_req, res) => {
     res.status(404).json({
