@@ -9,6 +9,7 @@ import { createAccountRouter } from "./routes/account.routes";
 import { errorHandler } from "./middleware/error-handler";
 import { createUserRouter } from "./routes/user.routes";
 import { createPlanRouter } from "./routes/plan.router";
+import { createConsumptionRouter } from "./routes/consumption.routes";
 export function createApp(dataSource: DataSource): Express {
   const app = express();
   const services = createServices(dataSource);
@@ -31,10 +32,16 @@ app.use(
   apiKeyAuth,
   createUserRouter(services.userService),
 );
+
 app.use(
   "/plans",
   apiKeyAuth,
   createPlanRouter(services.planService),
+);
+app.use(
+  "/consumption",
+  apiKeyAuth,
+  createConsumptionRouter(services.consumptionService),
 );
   app.use((_req, res) => {
     res.status(404).json({
