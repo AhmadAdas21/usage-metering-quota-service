@@ -7,7 +7,8 @@ import { ConsumptionService } from "../services/consumption.service";
 import { AccountService } from "../services/account.service";
 import { PlanService } from "../services/plan.service";
 import { UserService } from "../services/user.service";
-
+import { UsageService } from "../services/usage.service";
+import { UsageHistoryService } from "../services/usage-history.service";
 export function createServices(dataSource: DataSource) {
   const planRepository = dataSource.getRepository(Plan);
 
@@ -23,10 +24,14 @@ export function createServices(dataSource: DataSource) {
 
   const planService = new PlanService(planRepository);
   const consumptionService = new ConsumptionService(dataSource);
+  const usageService = new UsageService(dataSource);
+  const usageHistoryService = new UsageHistoryService(dataSource);
   return {
     accountService,
     userService,
     planService,
+    usageService,
     consumptionService,
+    usageHistoryService,
   };
 }

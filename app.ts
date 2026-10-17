@@ -1,5 +1,5 @@
 import express from "express";
-
+import { createUsageRouter } from "./routes/usage.routes";
 import type { Express } from "express";
 import type { DataSource } from "typeorm";
 import { createApiKeyAuth } from "./middleware/api-key-authintication";
@@ -42,6 +42,14 @@ app.use(
   "/consumption",
   apiKeyAuth,
   createConsumptionRouter(services.consumptionService),
+);
+app.use(
+  "/usage",
+  apiKeyAuth,
+  createUsageRouter(
+    services.usageService,
+    services.usageHistoryService,
+  ),
 );
   app.use((_req, res) => {
     res.status(404).json({
