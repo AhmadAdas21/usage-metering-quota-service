@@ -1,0 +1,80 @@
+import type {
+  Request,
+  Response,
+  NextFunction,
+} from "express";
+
+import { ApplicationError } from "../error/application-error";
+
+export function errorHandler(
+  error: unknown,
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (res.headersSent) {
+    next(error);
+    return;
+  }
+
+  if (error instanceof ApplicationError) {
+ const status =
+ error.code === "USER_NOT_FOUND" ||
+  error.code === "PLAN_NOT_FOUND" ||
+  error.code === "ACCOUNT_NOT_FOUND"
+    ? 404
+    : error.code === "USER_ALREADY_EXISTS" ||
+    error.code === "REQUEST_ID_CONFLICT" ||
+        error.code === "PLAN_VERSION_CONFLICT"
+      ? 409
+      : 400
+      ;
+
+  res.status(status).json({
+    error: {
+      code: error.code,
+      message: error.message,
+    },
+  });
+  return;
+}
+
+  if (
+    error instanceof SyntaxError &&
+    "type" in error &&
+    error.type === "entity.parse.failed"
+  ) {
+    res.status(400).json({
+      error: {
+        code: "INVALID_JSON",
+        message: "Request body must contain valid JSON.",
+      },
+    });
+    return;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "type" in error &&
+    error.type === "entity.too.large"
+  ) {
+    res.status(413).json({
+      error: {
+        code: "PAYLOAD_TOO_LARGE",
+        message: "Request body exceeds the allowed size.",
+      },
+    });
+    return;
+  }
+
+  console.error(
+    "Unhandled request error:", error instanceof Error ? error.name : "UnknownError", );
+
+  res.status(500).json({
+    error: {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
+    },
+  });
+}

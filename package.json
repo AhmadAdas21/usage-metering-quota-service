@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+ "scripts": {
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "db:init": "ts-node database/initialize.ts",
+  "typecheck": "tsc --noEmit",
+  "dev": "ts-node server.ts"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AhmadAdas21/usage-metering-quota-service.git"
@@ -19,8 +22,18 @@
   },
   "homepage": "https://github.com/AhmadAdas21/usage-metering-quota-service#readme",
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "ts-node": "^10.9.2",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
+    "pg": "^8.23.1",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^1.1.2"
   }
 }
