@@ -1,0 +1,118 @@
+{
+  "runId": "2bc1b5f2-89fd-4efe-a259-8d28e59de667",
+  "startedAt": "2026-10-19T07:46:55.148Z",
+  "finishedAt": "2026-10-19T07:47:06.275Z",
+  "baseUrl": "http://localhost:3000",
+  "loadModel": "closed-loop-fixed-workers",
+  "client": {
+    "nodeVersion": "v24.21.0",
+    "platform": "win32",
+    "architecture": "x64"
+  },
+  "passed": true,
+  "reports": [
+    {
+      "scenario": "shared-account-quota",
+      "accountId": "d71b2344-9bd8-4a7e-ba94-deb53e3bb0d0",
+      "configuration": {
+        "name": "shared-account-quota",
+        "accountAllowance": 250,
+        "userAllowance": 1000,
+        "uniqueRequests": 1000,
+        "repetitions": 1,
+        "expectedAccepted": 250,
+        "rejectionScope": "account",
+        "userCount": 10,
+        "concurrency": 50,
+        "unitsPerRequest": 1,
+        "warmupRequests": 0
+      },
+      "metrics": {
+        "attempts": 1000,
+        "acceptedResponses": 250,
+        "rejectedResponses": 750,
+        "failedAttempts": 0,
+        "uniqueAccepted": 250,
+        "durationSeconds": 4.36,
+        "completedRequestsPerSecond": 229.21,
+        "latencyP50Ms": 203.29,
+        "latencyP95Ms": 279.46,
+        "latencyP99Ms": 356.19
+      },
+      "verification": {
+        "passed": true,
+        "errors": []
+      },
+      "errorSamples": []
+    },
+    {
+      "scenario": "individual-user-quotas",
+      "accountId": "a1db912e-308d-4094-a413-5e23d6eff287",
+      "configuration": {
+        "name": "individual-user-quotas",
+        "accountAllowance": 2000,
+        "userAllowance": 25,
+        "uniqueRequests": 1000,
+        "repetitions": 1,
+        "expectedAccepted": 250,
+        "rejectionScope": "user",
+        "userCount": 10,
+        "concurrency": 50,
+        "unitsPerRequest": 1,
+        "warmupRequests": 0
+      },
+      "metrics": {
+        "attempts": 1000,
+        "acceptedResponses": 250,
+        "rejectedResponses": 750,
+        "failedAttempts": 0,
+        "uniqueAccepted": 250,
+        "durationSeconds": 4.17,
+        "completedRequestsPerSecond": 239.92,
+        "latencyP50Ms": 199.58,
+        "latencyP95Ms": 249.58,
+        "latencyP99Ms": 256.55
+      },
+      "verification": {
+        "passed": true,
+        "errors": []
+      },
+      "errorSamples": []
+    },
+    {
+      "scenario": "concurrent-idempotent-retries",
+      "accountId": "88c92d85-9f00-4936-aae2-8e1c4877335d",
+      "configuration": {
+        "name": "concurrent-idempotent-retries",
+        "accountAllowance": 1000,
+        "userAllowance": 1000,
+        "uniqueRequests": 100,
+        "repetitions": 10,
+        "expectedAccepted": 100,
+        "rejectionScope": null,
+        "userCount": 10,
+        "concurrency": 50,
+        "unitsPerRequest": 1,
+        "warmupRequests": 0
+      },
+      "metrics": {
+        "attempts": 1000,
+        "acceptedResponses": 1000,
+        "rejectedResponses": 0,
+        "failedAttempts": 0,
+        "uniqueAccepted": 100,
+        "durationSeconds": 2.06,
+        "completedRequestsPerSecond": 484.58,
+        "latencyP50Ms": 99.89,
+        "latencyP95Ms": 131.88,
+        "latencyP99Ms": 146.71
+      },
+      "verification": {
+        "passed": true,
+        "errors": []
+      },
+      "errorSamples": []
+    }
+  ],
+  "setupErrors": []
+}
