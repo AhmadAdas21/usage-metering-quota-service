@@ -1,0 +1,40 @@
+{
+  "runId": "078e0266-a41f-4548-b211-aaea231705ae",
+  "startedAt": "2026-10-19T07:36:28.770Z",
+  "finishedAt": "2026-10-19T07:36:39.034Z",
+  "scenario": "single-account-multiple-users",
+  "loadModel": "closed-loop-fixed-workers",
+  "client": {
+    "nodeVersion": "v24.21.0",
+    "platform": "win32",
+    "architecture": "x64"
+  },
+  "configuration": {
+    "baseUrl": "http://localhost:3000",
+    "requests": 2000,
+    "concurrency": 20,
+    "userCount": 10,
+    "warmupRequests": 50,
+    "unitsPerRequest": 1
+  },
+  "accountId": "96272a55-dc52-44c7-bcd9-1d82c68d951a",
+  "metrics": {
+    "requests": 2000,
+    "successfulRequests": 2000,
+    "failedRequests": 0,
+    "errorRatePercent": 0,
+    "durationSeconds": 9.6,
+    "completedRequestsPerSecond": 208.24,
+    "latencyMeanMs": 95.52,
+    "latencyP50Ms": 93.53,
+    "latencyP95Ms": 110.8,
+    "latencyP99Ms": 125.61,
+    "latencyMaxMs": 150.8
+  },
+  "verification": {
+    "passed": true,
+    "expectedTotalIncludingWarmup": 2050,
+    "errors": []
+  },
+  "errorSamples": []
+}
