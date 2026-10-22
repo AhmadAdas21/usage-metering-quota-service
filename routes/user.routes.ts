@@ -10,6 +10,8 @@ export function createUserRouter(
   const controller = new UserController(userService);
 
   router.post("/", controller.createUser);
+  router.get("/:userId", controller.getUser);
   router.put("/:userId/plan", controller.changePlan);
+
   return router;
 }

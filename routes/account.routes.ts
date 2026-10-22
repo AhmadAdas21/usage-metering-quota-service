@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 import type { RequestHandler } from "express";
 
@@ -13,12 +12,8 @@ export function createAccountRouter(
   const controller = new AccountController(accountService);
 
   router.post("/", controller.createAccount);
-
-  router.put(
-    "/me/plan",
-    apiKeyAuth,
-    controller.changePlan,
-  );
+  router.get("/me/plan", apiKeyAuth, controller.getCurrentPlan);
+  router.put("/me/plan", apiKeyAuth, controller.changePlan);
 
   return router;
 }
