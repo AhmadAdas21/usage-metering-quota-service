@@ -480,3 +480,45 @@ See [load-test methodology, results, and limitations](tests/load/README.md) and 
 - Load tests cover the documented local scenarios, not multi-instance deployment or every production workload.
 
 Production deployment would need separate decisions for credentials, TLS, onboarding controls, retention, monitoring, and operational capacity.
+## Metering Studio Dashboard
+
+A web-based dashboard for managing accounts, users,
+quota plans, consumption requests, and usage history.
+
+Dashboard URL:
+http://localhost:3000/dashboard/
+
+Features:
+- Account and user quota inspection
+- Effective per-request quota limits
+- Accepted and rejected consumption requests
+- Idempotent request replay
+- Custom plan management
+- Usage history and pagination
+
+## Automated Tests
+
+The project includes 57 automated tests:
+
+- 23 Unit Tests
+- 34 Integration Tests
+
+Run the tests:
+
+npm run test:unit
+npm run test:integration
+
+Integration tests require the PostgreSQL test container.
+
+## Additional API Endpoints
+
+GET /accounts/me/plan
+GET /users/:userId
+
+These endpoints expose active plan information.
+
+## Example Client
+
+Run the demonstration client:
+
+docker compose run --rm example-client

@@ -1,9 +1,9 @@
 import type { UpdatePlanRequest } from "../dtos/plan.dtp";
 import { ApplicationError } from "../error/application-error";
 
-function isObject(
-  value: unknown,
-): value is Record<string, unknown> {
+const MAX_USAGE_UNITS = 2_147_483_647;
+
+function isObject(value: unknown): value is Record<string, unknown> {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -15,13 +15,12 @@ function isValidLimit(value: unknown): value is number {
   return (
     typeof value === "number" &&
     Number.isSafeInteger(value) &&
-    value >= 0
+    value >= 0 &&
+    value <= MAX_USAGE_UNITS
   );
 }
 
-export function validateUpdatePlan(
-  body: unknown,
-): UpdatePlanRequest {
+export function validateUpdatePlan(body: unknown): UpdatePlanRequest {
   if (!isObject(body)) {
     throw new ApplicationError(
       "INVALID_PLAN_RULES",
@@ -44,7 +43,6 @@ export function validateUpdatePlan(
   }
 
   const name = body.name.trim();
-
   if (name.length === 0 || name.length > 100) {
     throw new ApplicationError(
       "INVALID_PLAN_NAME",
@@ -60,19 +58,17 @@ export function validateUpdatePlan(
   }
 
   const { monthlyAllowance, maxUnitsPerRequest } = body.rules;
-
   if (
     !isValidLimit(monthlyAllowance) ||
     !isValidLimit(maxUnitsPerRequest)
   ) {
     throw new ApplicationError(
       "INVALID_PLAN_RULES",
-      "Limits must be non-negative safe integers.",
+      "Limits must be integers between 0 and 2147483647.",
     );
   }
 
   const expectedVersion = body.expectedVersion;
-
   if (
     typeof expectedVersion !== "number" ||
     !Number.isSafeInteger(expectedVersion) ||
@@ -86,10 +82,7 @@ export function validateUpdatePlan(
 
   return {
     name,
-    rules: {
-      monthlyAllowance,
-      maxUnitsPerRequest,
-    },
+    rules: { monthlyAllowance, maxUnitsPerRequest },
     expectedVersion,
   };
 }

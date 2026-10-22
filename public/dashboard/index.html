@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111c38" />
+  <title>Metering Studio · Usage & Quota</title>
+  <link rel="stylesheet" href="/dashboard/styles.css" />
+  <script defer src="/dashboard/app.js"></script>
+</head>
+<body>
+  <div class="app-shell" id="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-icon"><svg viewBox="0 0 32 32" fill="none"><path d="M5 22l7-12 6 9 4-7 5 10" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="9" r="3" fill="currentColor"/></svg></div><div class="brand-name">metering<span>studio</span><small>WORKSPACE CONSOLE</small></div></div>
+      <div class="workspace-caption">WORKSPACE</div>
+      <nav class="nav" aria-label="Main navigation">
+        <button class="nav-link active" data-view="overview"><span class="nav-icon">▦</span> Overview</button>
+        <button class="nav-link" data-view="consumption"><span class="nav-icon">↗</span> Consumption</button>
+        <button class="nav-link" data-view="users"><span class="nav-icon">♙</span> Users <span class="nav-pill" id="nav-user-count">0</span></button>
+        <button class="nav-link" data-view="plans"><span class="nav-icon">◈</span> Plans</button>
+        <button class="nav-link" data-view="activity"><span class="nav-icon">▤</span> Activity</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="sidebar-help"><div class="small-star">✧</div><strong>Built to make quotas clear.</strong><p>Real-time metering across every user and plan.</p></div>
+        <div class="sidebar-footer"><span class="live-dot"></span> System ready <span class="footer-version">v1.0</span></div>
+      </div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb-current">Overview</strong></div>
+        <div class="top-actions"><span class="today-label" id="today-label"></span><span class="top-separator"></span><span class="online-status"><i></i> API connected</span><button class="avatar" id="disconnect-btn" title="Disconnect API key">MS</button></div>
+      </header>
+      <main class="main-content">
+        <div class="page-heading"><div><div class="eyebrow">YOUR COMMAND CENTER <span class="eyebrow-line"></span></div><h1 id="page-title">Usage overview</h1><p id="page-description">A clear picture of every unit, user, and limit.</p></div><button type="button" class="button primary new-action" id="top-consume-btn"><span class="button-plus">＋</span> Record usage</button></div>
+
+        <section class="view" id="view-overview">
+          <div class="welcome-card"><div><div class="welcome-kicker">MONTHLY SNAPSHOT</div><h2>Stay in control of your usage.</h2><p>Monitor your shared balance and make every request count.</p></div><div class="welcome-art" aria-hidden="true"><span class="ring ring-one"></span><span class="ring ring-two"></span><span class="ring ring-three"></span><span class="art-spark">✧</span></div></div>
+          <div class="metric-grid">
+            <div class="metric-card"><div class="metric-top"><span>Total consumed</span><span class="metric-icon violet">↗</span></div><div class="metric-value" id="metric-used">—</div><div class="metric-foot"><span class="metric-caption">units this month</span></div></div>
+            <div class="metric-card"><div class="metric-top"><span>Remaining quota</span><span class="metric-icon mint">◈</span></div><div class="metric-value" id="metric-remaining">—</div><div class="metric-foot"><span class="metric-caption">available to spend</span></div></div>
+            <div class="metric-card"><div class="metric-top"><span>Monthly allowance</span><span class="metric-icon blue">▥</span></div><div class="metric-value" id="metric-allowance">—</div><div class="metric-foot"><span class="metric-caption">shared account limit</span></div></div>
+            <div class="metric-card"><div class="metric-top"><span>Registered users</span><span class="metric-icon peach">♙</span></div><div class="metric-value" id="metric-users">—</div><div class="metric-foot"><span class="metric-caption">in your workspace</span></div></div>
+          </div>
+          <div class="overview-grid"><article class="panel quota-panel"><div class="panel-header"><div><h3>Account quota health</h3><p>Shared monthly consumption</p></div><span class="soft-badge" id="account-plan-badge">Starter</span></div><div class="quota-visual"><div class="donut" id="quota-donut"><div class="donut-core"><strong id="donut-number">0%</strong><span>utilized</span></div></div><div class="quota-detail"><span class="mini-label">USAGE THIS MONTH</span><div class="quota-detail-value"><strong id="quota-used">0</strong><span> / <span id="quota-max">0</span> units</span></div><p id="quota-caption">You're on track with your monthly usage.</p><div class="legend"><span><i class="legend-dot used"></i>Consumed</span><span><i class="legend-dot remaining"></i>Available</span></div></div></div></article>
+            <article class="panel user-panel"><div class="panel-header"><div><h3>Usage by user</h3><p>Individual balances at a glance</p></div><button class="text-button" data-view="users">View all →</button></div><div id="overview-users" class="usage-users"><div class="empty-mini">Connect to see user activity.</div></div></article></div>
+          <article class="panel activity-panel"><div class="panel-header"><div><h3>Recent activity</h3><p>Latest consumption decisions</p></div><button class="text-button" data-view="activity">View history →</button></div><div class="table-scroll"><table><thead><tr><th>REQUEST</th><th>USER</th><th>UNITS</th><th>DECISION</th><th>TIME</th></tr></thead><tbody id="overview-history"></tbody></table></div></article>
+        </section>
+
+        <section class="view" id="view-consumption" hidden>
+          <div class="two-col-layout"><article class="panel form-panel"><div class="panel-header"><div><h3>Make a consumption request</h3><p>Every action checks account and user limits.</p></div><span class="panel-tag">POST /consumption</span></div>
+            <form id="consume-form" class="form-stack"><label>User<select id="consume-user" required><option value="">Choose a user</option></select></label><div id="quota-preview" class="quota-preview" hidden aria-live="polite">
+  <div class="quota-preview-head"><strong>Applied limits for this request</strong><span id="effective-rule-label" class="limit-chip">—</span></div>
+  <div class="quota-preview-grid">
+    <div><small>Account plan</small><strong id="preview-account-plan">—</strong><span id="preview-account-limits">—</span></div>
+    <div><small>User plan</small><strong id="preview-user-plan">—</strong><span id="preview-user-limits">—</span></div>
+  </div>
+  <p class="quota-preview-note" id="preview-message">Choose a user to see both limits.</p>
+</div>
+<label>Units to consume<input id="consume-units" type="number" min="1" max="2147483647" value="5" required /></label><label>Request ID<input id="consume-request-id" type="text" maxlength="128" required /><span class="form-hint">Each new action needs a new ID. Use “Replay last” only to retry an identical request.</span></label><div class="form-actions"><button type="button" class="button outline" id="new-request-id">New ID</button>
+<button type="button" class="button outline" id="replay-request-btn" hidden>Replay last</button><button class="button primary" type="submit">Submit request →</button></div></form>
+          </article><article class="panel explain-panel"><div class="panel-header"><div><h3>How it works</h3><p>All-or-nothing, by design.</p></div></div><div class="explain-step"><b>01</b><div><strong>Identify your account</strong><p>Your API key automatically selects the workspace.</p></div></div><div class="explain-step"><b>02</b><div><strong>Check both quota levels</strong><p>The effective limit is the smallest of the account and user per-request limits and their remaining monthly allowances. Premium cannot override Starter's account limit.</p></div></div><div class="explain-step"><b>03</b><div><strong>Record an atomic result</strong><p>Accepted usage updates both balances; rejections consume nothing.</p></div></div><div class="result-box" id="consume-result" hidden aria-live="polite"></div></article></div>
+        </section>
+
+        <section class="view" id="view-users" hidden><div class="two-col-layout users-layout"><article class="panel"><div class="panel-header"><div><h3>Registered users</h3><p>Users are isolated within this account.</p></div><span class="soft-badge" id="users-count-badge">0 users</span></div><div id="users-list" class="user-list"></div><div class="pagination-row" id="user-pagination" hidden><button class="button outline small" id="user-prev">← Previous</button><span id="user-page-label"></span><button class="button outline small" id="user-next">Next →</button></div></article><article class="panel form-panel"><div class="panel-header"><div><h3>Register a user</h3><p>Every user needs a user-scoped plan.</p></div></div><form id="create-user-form" class="form-stack"><label>External user ID<input id="create-user-external" placeholder="e.g. customer-001" maxlength="100" required /></label><label>Starting plan<select id="create-user-plan" required><option value="">Choose a plan</option></select></label><button class="button primary full" type="submit">Create user →</button></form></article></div></section>
+
+        <section class="view" id="view-plans" hidden><div class="two-col-layout"><article class="panel"><div class="panel-header"><div><h3>Plan catalog</h3><p>Predefined and account-owned limits.</p></div><span class="soft-badge" id="plan-count-badge">0 plans</span></div><p class="plan-active-note" id="plan-active-note">Both the account's limits and the selected user's limits apply to every request.</p>
+<div id="plan-list" class="plan-list"></div></article><article class="right-column"><div class="panel form-panel"><div class="panel-header"><div><h3>Create custom plan</h3><p>Configure rules without redeploying.</p></div></div><form id="create-plan-form" class="form-stack"><label>Plan name<input id="plan-name" placeholder="e.g. Team Growth" maxlength="100" required /></label><label>Scope<select id="plan-scope"><option value="user">User</option><option value="account">Account</option></select></label><div class="two-inputs"><label>Monthly allowance<input id="plan-monthly" type="number" min="0" max="2147483647" value="500" required /></label><label>Max / request<input id="plan-per-request" type="number" min="0" max="2147483647" value="25" required /></label></div><button class="button primary full" type="submit">Create plan →</button></form></div><div class="panel form-panel assignment-panel"><div class="panel-header"><div><h3>Change account plan</h3><p>Already-consumed units are preserved.</p></div></div><form id="change-account-plan-form" class="form-stack"><label>Account plan<select id="change-account-plan" required></select></label><button class="button outline full" type="submit">Apply account plan</button></form></div></article></div><article class="panel edit-panel" id="edit-plan-panel" hidden><div class="panel-header"><div><h3>Edit custom plan</h3><p>Changes take effect for subsequent requests.</p></div><button type="button" class="icon-button" id="cancel-edit-plan" aria-label="Cancel editing">✕</button></div><form class="form-stack" id="edit-plan-form"><input type="hidden" id="edit-plan-id"/><input type="hidden" id="edit-plan-version"/><label>Name<input id="edit-plan-name" required maxlength="100" /></label><div class="two-inputs"><label>Monthly allowance<input id="edit-plan-monthly" type="number" min="0" max="2147483647" required /></label><label>Max units/request<input id="edit-plan-per-request" type="number" min="0" max="2147483647" required /></label></div><button type="submit" class="button primary">Save plan changes</button></form></article></section>
+
+        <section class="view" id="view-activity" hidden><article class="panel activity-panel"><div class="panel-header activity-header"><div><h3>Consumption history</h3><p>Accepted and rejected requests, with original decisions.</p></div><label class="month-control">Month<input type="month" id="history-month" /></label></div><div class="table-scroll"><table><thead><tr><th>REQUEST</th><th>USER</th><th>UNITS</th><th>DECISION</th><th>REASON</th><th>TIME</th></tr></thead><tbody id="activity-history"></tbody></table></div><div class="pagination-row"><button class="button outline small" id="history-prev">← Previous</button><span id="history-page-label">Page 1</span><button class="button outline small" id="history-next">Next →</button></div></article></section>
+      </main>
+    </div>
+  </div>
+
+  <div class="auth-backdrop" id="auth-backdrop"><div class="auth-card"><div class="auth-brand"><span class="auth-logo">◈</span><span>metering<span class="brand-purple">studio</span></span></div><div class="auth-kicker">WELCOME TO YOUR WORKSPACE</div><h2>Usage, beautifully<br />under control.</h2><p>Connect an account or create a fresh demo workspace to explore metering, quota enforcement, and history.</p><form id="connect-form" class="form-stack"><label>Your account API key<input type="password" id="connect-key" placeholder="umq_••••••••••••••" autocomplete="off" required /></label><button type="submit" class="button primary full">Connect workspace →</button></form><div class="or-divider"><span>OR START FROM SCRATCH</span></div><button class="button secondary full" id="create-demo-btn">✦ Create demo workspace</button><small>API keys are kept only in this browser tab's memory. Save new keys before refreshing.</small></div></div>
+  <div class="key-banner" id="key-banner" hidden><div><strong>Save your new API key</strong><p>This is your only copy. Keep it somewhere safe to reconnect after refresh.</p></div><button class="button primary small" id="copy-key-btn">Copy API key</button><button class="icon-button" id="dismiss-key-btn" title="Dismiss">✕</button></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

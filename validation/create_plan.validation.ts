@@ -1,9 +1,10 @@
 import type { CreatePlanRequest } from "../dtos/plan.dtp";
 import { ApplicationError } from "../error/application-error";
 
-function isObject(
-  value: unknown,
-): value is Record<string, unknown> {
+// PostgreSQL INTEGER columns store usage from 0 to 2,147,483,647.
+const MAX_USAGE_UNITS = 2_147_483_647;
+
+function isObject(value: unknown): value is Record<string, unknown> {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -15,13 +16,12 @@ function isValidLimit(value: unknown): value is number {
   return (
     typeof value === "number" &&
     Number.isSafeInteger(value) &&
-    value >= 0
+    value >= 0 &&
+    value <= MAX_USAGE_UNITS
   );
 }
 
-export function validateCreatePlan(
-  body: unknown,
-): CreatePlanRequest {
+export function validateCreatePlan(body: unknown): CreatePlanRequest {
   if (!isObject(body)) {
     throw new ApplicationError(
       "INVALID_PLAN_RULES",
@@ -37,7 +37,6 @@ export function validateCreatePlan(
   }
 
   const name = body.name.trim();
-
   if (name.length === 0 || name.length > 100) {
     throw new ApplicationError(
       "INVALID_PLAN_NAME",
@@ -60,23 +59,19 @@ export function validateCreatePlan(
   }
 
   const { monthlyAllowance, maxUnitsPerRequest } = body.rules;
-
   if (
     !isValidLimit(monthlyAllowance) ||
     !isValidLimit(maxUnitsPerRequest)
   ) {
     throw new ApplicationError(
       "INVALID_PLAN_RULES",
-      "Limits must be non-negative safe integers.",
+      "Limits must be integers between 0 and 2147483647.",
     );
   }
 
   return {
     name,
     scope: body.scope,
-    rules: {
-      monthlyAllowance,
-      maxUnitsPerRequest,
-    },
+    rules: { monthlyAllowance, maxUnitsPerRequest },
   };
 }

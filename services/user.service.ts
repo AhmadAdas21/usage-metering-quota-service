@@ -5,10 +5,11 @@ import type {
   CreateUserRequest,
   CreateUserResponse,
 } from "../dtos/user.dto";
+import type { ChangePlanRequest } from "../dtos/change-plan.dto";
 import { ApplicationError } from "../error/application-error";
 import { Plan } from "../models/plan.model";
 import { User } from "../models/user.model";
-import type { ChangePlanRequest } from "../dtos/change-plan.dto";
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -40,7 +41,6 @@ export class UserService {
     request: CreateUserRequest,
   ): Promise<CreateUserResponse> {
     const externalId = request.externalId.trim();
-    
 
     if (externalId.length === 0 || externalId.length > 100) {
       throw new ApplicationError(
@@ -106,82 +106,136 @@ export class UserService {
         createdAt: savedUser.createdAt.toISOString(),
       },
     };
-    
-  }
-  
-async changePlan(
-  accountId: string,
-  userId: string,
-  request: ChangePlanRequest,
-) {
-  if (!UUID_PATTERN.test(userId)) {
-    throw new ApplicationError(
-      "INVALID_USER_ID",
-      "User ID must be a valid UUID.",
-    );
   }
 
-  if (!UUID_PATTERN.test(request.planId)) {
-    throw new ApplicationError(
-      "INVALID_PLAN_ID",
-      "Plan ID must be a valid UUID.",
-    );
-  }
-
-  return this.userRepository.manager.transaction(
-    async (manager) => {
-      const userRepository = manager.getRepository(User);
-      const planRepository = manager.getRepository(Plan);
-
-      const user = await userRepository.findOne({
-        where: { id: userId, accountId },
-        lock: { mode: "pessimistic_write" },
-      });
-
-      if (!user) {
-        throw new ApplicationError(
-          "USER_NOT_FOUND",
-          "User was not found.",
-        );
-      }
-
-      const plan = await planRepository.findOneBy([
-        {
-          id: request.planId,
-          scope: "user",
-          ownerAccountId: IsNull(),
-        },
-        {
-          id: request.planId,
-          scope: "user",
-          ownerAccountId: accountId,
-        },
-      ]);
-
-      if (!plan) {
-        throw new ApplicationError(
-          "PLAN_NOT_AVAILABLE",
-          "Choose an available user plan.",
-        );
-      }
-
-      await userRepository.update(
-        { id: userId, accountId },
-        { planId: plan.id },
+  // Scope by accountId before fetching the user's assigned plan.
+  async getUser(accountId: string, userId: string) {
+    if (!UUID_PATTERN.test(userId)) {
+      throw new ApplicationError(
+        "INVALID_USER_ID",
+        "User ID must be a valid UUID.",
       );
+    }
 
-      return {
-        user: {
-          id: user.id,
-          accountId: user.accountId,
-          externalId: user.externalId,
-          planId: plan.id,
-          createdAt: user.createdAt.toISOString(),
-        },
-      };
-    },
-  );
-}
+    return this.userRepository.manager.transaction(
+      "REPEATABLE READ",
+      async (manager) => {
+        const user = await manager.getRepository(User).findOneBy({
+          id: userId,
+          accountId,
+        });
 
-  
+        if (!user) {
+          throw new ApplicationError(
+            "USER_NOT_FOUND",
+            "User was not found.",
+          );
+        }
+
+        const plan = await manager.getRepository(Plan).findOneBy({
+          id: user.planId,
+          scope: "user",
+        });
+
+        if (!plan) {
+          throw new ApplicationError(
+            "PLAN_NOT_FOUND",
+            "User plan was not found.",
+          );
+        }
+
+        return {
+          user: {
+            id: user.id,
+            accountId: user.accountId,
+            externalId: user.externalId,
+            planId: user.planId,
+            createdAt: user.createdAt.toISOString(),
+          },
+          plan: {
+            id: plan.id,
+            name: plan.name,
+            scope: plan.scope,
+            rules: plan.rules,
+            version: plan.version,
+            isPredefined: plan.ownerAccountId === null,
+          },
+        };
+      },
+    );
+  }
+
+  async changePlan(
+    accountId: string,
+    userId: string,
+    request: ChangePlanRequest,
+  ) {
+    if (!UUID_PATTERN.test(userId)) {
+      throw new ApplicationError(
+        "INVALID_USER_ID",
+        "User ID must be a valid UUID.",
+      );
+    }
+
+    if (!UUID_PATTERN.test(request.planId)) {
+      throw new ApplicationError(
+        "INVALID_PLAN_ID",
+        "Plan ID must be a valid UUID.",
+      );
+    }
+
+    return this.userRepository.manager.transaction(
+      async (manager) => {
+        const userRepository = manager.getRepository(User);
+        const planRepository = manager.getRepository(Plan);
+
+        const user = await userRepository.findOne({
+          where: { id: userId, accountId },
+          lock: { mode: "pessimistic_write" },
+        });
+
+        if (!user) {
+          throw new ApplicationError(
+            "USER_NOT_FOUND",
+            "User was not found.",
+          );
+        }
+
+        const plan = await planRepository.findOneBy([
+          {
+            id: request.planId,
+            scope: "user",
+            ownerAccountId: IsNull(),
+          },
+          {
+            id: request.planId,
+            scope: "user",
+            ownerAccountId: accountId,
+          },
+        ]);
+
+        if (!plan) {
+          throw new ApplicationError(
+            "PLAN_NOT_AVAILABLE",
+            "Choose an available user plan.",
+          );
+        }
+
+        await userRepository.update(
+          { id: userId, accountId },
+          { planId: plan.id },
+        );
+
+        return {
+          user: {
+            id: user.id,
+            accountId: user.accountId,
+            externalId: user.externalId,
+            planId: plan.id,
+            createdAt: user.createdAt.toISOString(),
+          },
+        };
+      },
+    );
+  }
 }
