@@ -1,524 +1,784 @@
 # Usage Metering & Quota Service
 
-A TypeScript and PostgreSQL service for tracking monthly usage and enforcing account-level and user-level quotas.
+A backend service built with **Node.js, TypeScript, Express, TypeORM, and PostgreSQL** to track API usage and enforce monthly quotas at both account and user levels.
 
-Consumption decisions are transactional, account-isolated, and idempotent. The repository includes an HTTP API, a document-processing CLI demo, automated tests, and load-test reports.
+The service allows applications to manage quota plans, consume units, inspect usage, and retrieve historical consumption decisions.
 
-## Features
+It is designed around transactional consistency, concurrency safety, idempotency, account isolation, and configurable quota rules.
 
-- Predefined and custom account/user plans.
-- Monthly allowances and per-request limits.
-- Account authentication through API keys.
-- All-or-nothing consumption across account and user balances.
-- Idempotent requests with persisted results.
-- PostgreSQL locking to protect quotas under concurrent requests.
-- Plan changes that preserve consumed units and request history.
-- Monthly usage queries and filtered, paginated history.
-- Docker Compose setup with automatic migrations and predefined seeds.
+## Key Features
 
-## Quick start with Docker
+- Account registration with generated API keys
+- Account-level and user-level quotas
+- Predefined and account-owned custom plans
+- Monthly allowances and per-request limits
+- Atomic consumption using PostgreSQL transactions
+- Concurrency protection using pessimistic locking
+- Idempotent request processing
+- Plan assignment and updates without redeployment
+- Account isolation and API-key authentication
+- Monthly usage tracking and paginated history
+- Browser-based Metering Studio dashboard
+- Automated unit and integration testing
+- Load testing with recorded performance results
+- Docker Compose for the complete application stack
+- GitHub Actions for Continuous Integration
 
-Requirements:
+## Technology Stack
 
-- Docker Engine or Docker Desktop.
-- Docker Compose v2.
+| Layer | Technology |
+|---|---|
+| Runtime | Node.js 24 |
+| Language | TypeScript |
+| Framework | Express.js |
+| Database | PostgreSQL 17 |
+| ORM | TypeORM |
+| Authentication | API Keys |
+| Transactions | PostgreSQL Transactions |
+| Concurrency | Pessimistic Row Locking |
+| Frontend | HTML, CSS, JavaScript |
+| Containers | Docker & Docker Compose |
+| Testing | Node.js Test Runner |
+| CI | GitHub Actions |
 
-From the repository root:
+## Architecture
 
-```sh
+The service separates HTTP handling, business logic, validation, and persistence.
+
+```text
+Client / Metering Studio
+          |
+          v
+      Express API
+          |
+          v
+   API Key Middleware
+          |
+          v
+       Routes
+          |
+          v
+     Controllers
+          |
+          v
+       Services
+          |
+          v
+ Quota Rule Evaluation
+          |
+          v
+ PostgreSQL Transactions
+          |
+          v
+      PostgreSQL
+```
+
+### Main Components
+
+**Account Service**
+
+Responsible for account creation, API-key issuance, account plan assignment, and active plan inspection.
+
+**User Service**
+
+Handles user registration, account ownership, user plan assignment, and active user plan inspection.
+
+**Plan Service**
+
+Manages predefined and custom plans, including plan creation, updates, ownership validation, and version checks.
+
+**Consumption Service**
+
+Processes quota consumption requests, enforces account and user rules, handles idempotency, and records accepted or rejected decisions.
+
+**Usage Service**
+
+Returns account and user consumption statistics for a selected UTC month.
+
+**Usage History Service**
+
+Provides account-scoped, filtered, and paginated historical consumption decisions.
+
+## Getting Started
+
+### Requirements
+
+- Docker Engine or Docker Desktop
+- Docker Compose v2
+
+Node.js is not required locally when using the Docker workflow.
+
+### Run the Complete Application
+
+```bash
 docker compose up --build
 ```
 
-Compose starts PostgreSQL, initializes the database, starts the API, and runs the example client after the API becomes healthy.
+Docker Compose starts:
 
-- API: `http://localhost:3000`
-- Health endpoint: `http://localhost:3000/health`
-- PostgreSQL host port: `5433`
+1. PostgreSQL
+2. The backend API
+3. The example client
 
-No local Node.js installation or `.env` file is needed for this Docker workflow.
+The API initializes the database, applies migrations, and seeds predefined plans before serving requests.
 
-The example client exits after completing its scenarios. An exit code of `0` is expected; PostgreSQL and the API continue running.
+### Application URLs
 
-Inspect the demo output:
+| Service | URL |
+|---|---|
+| API | http://localhost:3000 |
+| Health Check | http://localhost:3000/health |
+| Metering Studio | http://localhost:3000/dashboard/ |
+| PostgreSQL | localhost:5433 |
 
-```sh
-docker compose logs example-client
-```
+The example client runs after the API becomes healthy.
 
-Run the demo again:
+### Run the Example Client Again
 
-```sh
+```bash
 docker compose run --rm example-client
 ```
 
-Each demo run creates a new account and users.
+### View Example Client Logs
 
-Stop the stack:
+```bash
+docker compose logs example-client
+```
 
-```sh
+### Stop the Application
+
+```bash
 docker compose down
 ```
 
-Database data is stored in a named volume and survives this command.
+The PostgreSQL named volume preserves application data across normal container restarts.
 
-## Example client
+## Metering Studio Dashboard
 
-The example simulates document processing: a document is processed only after its consumption request is accepted.
+Metering Studio is a browser-based interface served by the existing Express application.
 
-It creates these initial quotas:
+Open:
 
-| Owner | Monthly allowance | Maximum units per request |
-| --- | ---: | ---: |
-| Account | 30 | 100 |
-| Alice | 10 | 10 |
-| Bob | 100 | 50 |
+**http://localhost:3000/dashboard/**
 
-It demonstrates:
+### Dashboard Features
 
-1. Alice consumes 10 units successfully.
-2. Alice's next request is rejected because her monthly allowance is exhausted.
-3. Bob consumes 20 units successfully.
-4. Bob's next request is rejected because the shared account allowance is exhausted.
-5. The account allowance increases from 30 to 50.
-6. Bob submits a new request and successfully consumes one more unit.
+- Account usage overview
+- Current account and user plans
+- Effective per-request quota limits
+- User registration and plan assignment
+- Custom plan creation and modification
+- Consumption requests
+- Accepted and rejected decision details
+- Idempotent request replay
+- Monthly usage history and pagination
 
-Final usage:
+The dashboard supports creating a demo workspace or connecting to an existing account using its API key.
 
-| Owner | Used | Remaining |
-| --- | ---: | ---: |
-| Account | 31 | 19 |
-| Alice | 10 | 0 |
-| Bob | 21 | 79 |
+API keys are retained in browser memory during the active session rather than stored in browser storage.
 
-The client simulates processing; it does not parse or upload real documents.
+The dashboard is intended for local demonstration and development. It is not a production-ready administration portal.
 
-## Local development
+## Accounts, Users, and Plans
 
-Use Node.js 24 and npm. The Docker image also uses Node.js 24.
+### Account
 
-Install dependencies:
+An account represents an application or company using the metering service.
 
-```sh
-npm ci
-```
+Each account has a shared monthly allowance covering all its users.
 
-Start PostgreSQL:
+### User
 
-```sh
-docker compose up -d --wait postgres
-```
+A user belongs to exactly one account.
 
-Create a `.env` file in the repository root:
+Each user has individual quota limits. Different users may share the same plan while maintaining separate consumption balances.
 
-```dotenv
-DATABASE_URL=postgresql://usage_app:local_dev_password@localhost:5433/usage_metering
-PORT=3000
-```
+### Plan
 
-Initialize the database and start the API:
+A plan defines configurable quota rules.
 
-```sh
-npm run db:init
-npm run dev
-```
+Each account has an account-scoped plan, while each user has a user-scoped plan.
 
-If the Docker API is already running, stop it first to free port `3000`:
+Both plans are evaluated for every consumption request.
 
-```sh
-docker compose stop api
-```
+### Predefined Plans
 
-Run the example from another terminal:
+| Plan | Scope | Monthly Allowance | Max Units/Request |
+|---|---|---:|---:|
+| Starter | Account | 10,000 | 100 |
+| Pro | Account | 100,000 | 1,000 |
+| Basic | User | 1,000 | 20 |
+| Premium | User | 10,000 | 200 |
 
-```sh
-npx ts-node examples/document-client.ts
-```
+Predefined plans are automatically seeded and are read-only.
 
-The client defaults to `http://localhost:3000`. Set `API_BASE_URL` to use another API address.
+Accounts can create and manage their own custom plans.
 
-On Windows PowerShell, use `npm.cmd` and `npx.cmd` if script execution policy prevents running `npm` or `npx`.
+## Quota Rules
 
-## API overview
+The service supports two quota rules at both account and user levels.
 
-Except for health checks and account creation, endpoints require:
+### Monthly Allowance
+
+Defines the maximum number of units that can be consumed during a UTC calendar month.
+
+### Maximum Units Per Request
+
+Defines the maximum units allowed in a single consumption request.
+
+### Rule Evaluation Order
+
+1. Account maximum units per request
+2. User maximum units per request
+3. Account monthly allowance
+4. User monthly allowance
+
+The first violated rule determines the rejection reason.
+
+### Example
+
+Suppose:
+
+- Starter Account: maximum 100 units/request
+- Premium User: maximum 200 units/request
+
+A request for 199 units is rejected because the **account limit is 100**, even though the Premium user allows 200.
+
+The effective request limit is the more restrictive applicable limit.
+
+A request succeeds only when both account and user limits allow it.
+
+### Atomic Consumption
+
+Accepted requests:
+
+- Increase the user's consumed units
+- Increase the account's shared consumed units
+- Store the accepted result
+
+Rejected requests:
+
+- Consume zero units
+- Preserve existing usage balances
+- Store the rejection and its reason
+
+Both account and user balance updates occur in the same PostgreSQL transaction.
+
+## API Documentation
+
+All account-specific endpoints require:
 
 ```http
 x-api-key: <account-api-key>
 ```
 
-Send JSON request bodies with `Content-Type: application/json`.
+Account creation and the health endpoint do not require an API key.
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| GET | `/health` | Check API and database availability |
-| POST | `/accounts` | Create an account and issue its API key |
-| GET | `/accounts/me` | Read the authenticated account |
-| PUT | `/accounts/me/plan` | Change the account's assigned plan |
-| GET | `/plans` | List predefined and account-owned plans |
-| POST | `/plans` | Create a custom plan |
-| PUT | `/plans/:planId` | Update an owned custom plan |
-| POST | `/users` | Create a user within the account |
-| PUT | `/users/:userId/plan` | Change a user's assigned plan |
-| POST | `/consumption` | Submit or replay a consumption request |
-| GET | `/usage/account` | Read account usage for a month |
-| GET | `/usage/users/:userId` | Read user usage for a month |
-| GET | `/usage/history` | Read filtered, paginated request history |
+### Available Endpoints
 
-### Predefined plans
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | API and database health |
+| POST | `/accounts` | Create account and issue API key |
+| GET | `/accounts/me` | Get authenticated account |
+| GET | `/accounts/me/plan` | Inspect active account plan |
+| PUT | `/accounts/me/plan` | Change account plan |
+| GET | `/users` | List account users with pagination |
+| POST | `/users` | Create a user |
+| GET | `/users/:userId` | Inspect user and active plan |
+| PUT | `/users/:userId/plan` | Assign user plan |
+| GET | `/plans` | List available plans |
+| POST | `/plans` | Create custom plan |
+| PUT | `/plans/:planId` | Update owned custom plan |
+| POST | `/consumption` | Consume units or replay request |
+| GET | `/usage/account` | Get monthly account usage |
+| GET | `/usage/users/:userId` | Get monthly user usage |
+| GET | `/usage/history` | Get filtered, paginated history |
 
-| Plan | Scope | Monthly allowance | Per-request limit | ID |
-| --- | --- | ---: | ---: | --- |
-| Starter | account | 10000 | 100 | `00000000-0000-4000-8000-000000000001` |
-| Pro | account | 100000 | 1000 | `00000000-0000-4000-8000-000000000002` |
-| Basic | user | 1000 | 20 | `00000000-0000-4000-8000-000000000003` |
-| Premium | user | 10000 | 200 | `00000000-0000-4000-8000-000000000004` |
+### Create an Account
 
-Predefined plans are seeded without duplication and cannot be edited through the custom-plan update endpoint.
-
-### Create an account
-
-`POST /accounts`
+```http
+POST /accounts
+Content-Type: application/json
+```
 
 ```json
 {
-  "name": "Example account",
+  "name": "Example Company",
   "planId": "00000000-0000-4000-8000-000000000001"
 }
 ```
 
-Save the API key returned during creation and use it in subsequent requests. Account reads do not expose the key.
+The response contains the created account and a generated API key.
 
-### Create a user
+The API key should be stored securely by the calling application.
 
-`POST /users`
+### Create a User
+
+```http
+POST /users
+x-api-key: <account-api-key>
+Content-Type: application/json
+```
 
 ```json
 {
-  "externalId": "alice",
+  "externalId": "user-001",
   "planId": "00000000-0000-4000-8000-000000000003"
 }
 ```
 
-Use the returned user ID when submitting consumption requests. External user IDs are unique within an account.
+### Consume Units
 
-### Consume units
-
-`POST /consumption`
+```http
+POST /consumption
+x-api-key: <account-api-key>
+Content-Type: application/json
+```
 
 ```json
 {
-  "userId": "<created-user-id>",
-  "requestId": "document-report-001",
+  "userId": "<user-id>",
+  "requestId": "request-001",
   "units": 10
 }
 ```
 
-Requirements:
+The result includes:
 
-- `userId` must identify a user belonging to the authenticated account.
-- `requestId` must be nonblank and at most 128 characters.
-- `units` must be a positive integer no greater than `2147483647`.
+- Request identifier
+- User identifier
+- Requested units
+- UTC month and processing timestamp
+- Accepted or rejected status
+- Account usage and remaining allowance
+- User usage and remaining allowance
+- Rejection reason when applicable
 
-Both accepted consumption and quota-based rejection return HTTP `200`. Check the response's `accepted` field.
+Quota decisions return HTTP 200 with an `accepted` field indicating the outcome.
 
-The result contains:
+Validation, authentication, and request conflicts use appropriate HTTP error responses.
 
-- Request ID, user ID, and requested units.
-- UTC month and processing timestamp.
-- Account and user usage snapshots.
-- `accepted`.
-- `rejection`, which is `null` for accepted requests.
+## Idempotency
 
-For rejected consumption, the rejection describes the scope, violated rule, limit, and usage before the request.
+Every consumption request includes a `requestId`.
 
-A rejected request consumes no units.
+A request can be safely retried using the same:
 
-### Idempotent retries
-
-Retry the same request using the same `requestId`, `userId`, and `units`.
+- Request ID
+- User ID
+- Units
 
 The service returns the original persisted result without consuming units again.
 
-Reusing the same request ID with a different user or unit count conflicts with the original request. Request IDs are scoped to the authenticated account.
+Reusing a request ID with different request data produces a conflict.
 
-Accepted and quota-rejected results are both retained. A plan upgrade does not change a previously rejected request's result: submit a new request ID for a new decision.
+Idempotency is scoped to the authenticated account.
 
-Replay responses contain the original usage snapshot. Query the usage endpoints to retrieve current balances.
+Both accepted and quota-rejected decisions are preserved.
 
-### Custom plans and plan changes
+If a previously rejected request should be evaluated again after a plan change, the caller must submit a new request ID.
 
-Create an owned custom plan with `POST /plans`:
+## Concurrency and Transaction Safety
 
-```json
-{
-  "name": "Custom account plan",
-  "scope": "account",
-  "rules": {
-    "monthlyAllowance": 500,
-    "maxUnitsPerRequest": 50
-  }
-}
-```
+Concurrent consumption requests can target the same user or different users sharing one account allowance.
 
-Assign an account plan with `PUT /accounts/me/plan`:
+Without proper synchronization, concurrent requests could consume more units than allowed.
 
-```json
-{
-  "planId": "<account-plan-id>"
-}
-```
+### Implementation
 
-Assign a user plan with `PUT /users/:userId/plan` using the same body shape and a user-scoped plan.
+The service uses PostgreSQL transactions and pessimistic row locking.
 
-Update an owned custom plan with `PUT /plans/:planId`:
+A consumption transaction locks the relevant account and user records before evaluating and applying quota changes.
 
-```json
-{
-  "name": "Updated account plan",
-  "expectedVersion": 1,
-  "rules": {
-    "monthlyAllowance": 1000,
-    "maxUnitsPerRequest": 100
-  }
-}
-```
+This protects shared account allowances from race conditions and prevents partial consumption updates.
 
-Use the plan's current version as `expectedVersion`. A stale version returns a conflict.
+### Design Trade-off
 
-Updating a shared custom plan affects accounts or users assigned to that plan. Switching an assignment changes only the selected account or user.
+Account-level locking prioritizes accounting correctness.
 
-Neither operation resets consumed units or rewrites existing request results.
+However, concurrent requests targeting the same account may wait for one another, creating a potential throughput bottleneck under heavy contention.
 
-### Usage and history
+This behavior is documented and covered by concurrency tests.
 
-Omitting `month` selects the current UTC month.
+## Custom Plans and Plan Updates
 
-```text
+Accounts can create custom account-scoped and user-scoped plans.
+
+Custom plans support:
+
+- Monthly allowance
+- Maximum units per request
+- Plan name
+- Version tracking
+
+Plans can be updated without redeploying or restarting the service.
+
+### Optimistic Version Checks
+
+Custom plan updates use an `expectedVersion` value.
+
+If the submitted version is outdated, the update is rejected with a version conflict.
+
+### Plan Change Behavior
+
+- Existing consumed units remain unchanged
+- New limits apply to subsequent consumption decisions
+- Historical consumption decisions remain preserved
+- Lowering an allowance below current usage results in zero remaining units
+- Switching plans does not reset usage
+
+Plan limits are validated against PostgreSQL integer storage boundaries.
+
+## Monthly Usage and History
+
+Usage is tracked using UTC calendar months.
+
+A new month uses a new monthly usage record, so no scheduled reset job is required.
+
+Previously recorded usage remains available.
+
+### Account Usage
+
+```http
 GET /usage/account?month=2026-10
+```
+
+### User Usage
+
+```http
 GET /usage/users/<user-id>?month=2026-10
+```
+
+### Consumption History
+
+```http
 GET /usage/history?month=2026-10&page=1&pageSize=20
-GET /usage/history?month=2026-10&userId=<user-id>&page=1&pageSize=20
 ```
 
-Month query parameters use `YYYY-MM`. Response month values use `YYYY-MM-01`.
+History supports:
 
-History:
+- Filtering by UTC month
+- Filtering by user
+- Pagination
+- Accepted and rejected decisions
+- Processing timestamps
+- Account isolation
 
-- Includes accepted and quota-rejected requests.
-- Belongs only to the authenticated account.
-- Supports combined month and user filters.
-- Defaults to page `1` and page size `20`.
-- Allows page sizes up to `100`.
-- Orders results by `processedAt` descending, with a secondary ID ordering.
-- Returns pagination metadata, including total items and total pages.
+Page size is limited to a maximum of 100 records.
 
-Authentication and validation failures are not stored as consumption decisions.
+Historical consumed units are preserved. Available allowance is calculated using the currently assigned plan rather than reconstructing historical plan assignments.
 
-## Design and consistency
+## Account Isolation and API Security
 
-### Application structure
+Every API key identifies one account.
 
-- Routes and controllers handle HTTP requests.
-- Validation checks request bodies and query parameters.
-- Services implement account, plan, consumption, and usage behavior.
-- TypeORM entities and migrations define PostgreSQL persistence.
-- Composition constructs services using an injected data source.
-- Quota evaluation uses separate rule evaluators for per-request and monthly limits.
+The backend derives account identity from the API key rather than trusting an account ID supplied by the caller.
 
-Database schema synchronization is disabled. Schema changes are applied through migrations.
+Security-related behaviors include:
 
-### Atomic consumption
+- Missing or invalid API keys are rejected
+- API keys are generated using cryptographically secure random bytes
+- API-key hashes are stored in PostgreSQL
+- User access is restricted to the authenticated account
+- Plan ownership is validated
+- Usage and history queries are account-scoped
+- API keys are not returned by ordinary account inspection endpoints
 
-A consumption transaction locks the account and user rows, checks for an existing request, reads the applicable plans, and evaluates both quota levels.
-
-If accepted, it updates both monthly usage totals and stores the result in the same transaction.
-
-If rejected, it stores the rejection without changing either usage total.
-
-This prevents partial deductions where only one quota level is charged.
-
-### Concurrency
-
-Pessimistic write locks serialize competing consumption requests for the same account. This protects the shared account balance even when requests target different users.
-
-Plan reads use locks within the consumption transaction. Plan updates also use version checks to detect stale edits.
-
-The account lock is a deliberate correctness tradeoff: a heavily used single account can become a throughput bottleneck.
-
-### Rule evaluation order
-
-Rules are evaluated in this order:
-
-1. Account per-request limit.
-2. User per-request limit.
-3. Account monthly allowance.
-4. User monthly allowance.
-
-The first violated rule determines the rejection reason.
-
-### Monthly boundaries and plan changes
-
-Monthly buckets use UTC. A new month uses a separate usage record; a scheduled reset job is not required.
-
-Changing plans preserves recorded consumption. If the new allowance is below consumption, the remaining balance is reported as zero.
-
-Historical usage queries return the selected month's consumed units but calculate allowance and remaining units from the currently assigned plan.
-
-Stored consumption results preserve the original decision and usage snapshot. They are not recalculated after plan changes.
-
-### Account isolation
-
-The API key identifies the account; clients do not select another account by supplying an account ID.
-
-User lookups and history queries are scoped to the authenticated account. API keys are stored as hashes, and ordinary account responses do not expose credentials.
-
-## Automated tests
-
-Start the dedicated test database:
-
-```sh
-docker compose -f compose.test.yml up -d --wait
-```
-
-Run type checking and all automated tests:
-
-```sh
-npm run typecheck
-npm run test:all
-```
-
-The current suite contains:
-
-| Suite | Tests |
-| --- | ---: |
-| Unit | 17 |
-| Integration | 27 |
-| Total | 44 |
-
-Coverage includes:
-
-- Consumption validation and quota rules.
-- Database migrations and predefined seeds.
-- API-key authentication and account isolation.
-- Atomic balance updates and persisted decisions.
-- Accepted and rejected request replay.
-- Conflicting request IDs.
-- Concurrent account/user quota enforcement.
-- Concurrent retries without double counting.
-- Plan changes preserving usage and history.
-- Historical usage, filters, and pagination.
-
-The integration suite uses PostgreSQL on `127.0.0.1:5434` with database `usage_metering_test`. It starts its own HTTP test server and does not require the Docker API to be running.
-
-The test database is separate from the development database and uses temporary storage.
-
-Individual commands:
-
-```sh
-npm run test:unit
-npm run test:integration
-```
-
-`npm test` runs unit tests only.
-
-Stop the test database:
-
-```sh
-docker compose -f compose.test.yml down
-```
-
-If integration tests report `ECONNREFUSED 127.0.0.1:5434`, start the test database before rerunning them.
-
-## Load tests
-
-Start the API:
-
-```sh
-docker compose up -d --build --wait api
-```
-
-Run the load scripts:
-
-```sh
-npx ts-node tests/load/consumption.load.ts
-npx ts-node tests/load/contention.load.ts
-```
-
-These scripts create test accounts and data in the target API's database.
-
-The recorded baseline completed 2,000 measured requests using 20 workers:
-
-| Metric | Recorded value |
-| --- | ---: |
-| Successful requests | 2000 |
-| Failed requests | 0 |
-| Throughput | 208.24 requests/second |
-| P95 latency | 110.80 ms |
-| P99 latency | 125.61 ms |
-
-Additional contention scenarios verified:
-
-- Shared account quota enforcement.
-- Individual user quota enforcement.
-- Concurrent retries consuming once per unique request.
-
-Expected quota rejections are valid business results, not failed attempts.
-
-These measurements describe the recorded local environment and workload. They are not a production capacity guarantee.
-
-See [load-test methodology, results, and limitations](tests/load/README.md) and the [saved JSON reports](tests/load/results/).
-
-## Scope and limitations
-
-- Document processing is simulated; external work is not part of the database transaction.
-- There is no refund or reservation workflow for failed external processing.
-- Account creation is an unauthenticated bootstrap endpoint.
-- API-key rotation, revocation, and rate limiting are not implemented.
-- Compose credentials are intended for local development.
-- Consumption history and idempotency records have no automatic retention policy.
-- Historical usage responses do not reconstruct past plan allowances.
-- Load tests cover the documented local scenarios, not multi-instance deployment or every production workload.
-
-Production deployment would need separate decisions for credentials, TLS, onboarding controls, retention, monitoring, and operational capacity.
-## Metering Studio Dashboard
-
-A web-based dashboard for managing accounts, users,
-quota plans, consumption requests, and usage history.
-
-Dashboard URL:
-http://localhost:3000/dashboard/
-
-Features:
-- Account and user quota inspection
-- Effective per-request quota limits
-- Accepted and rejected consumption requests
-- Idempotent request replay
-- Custom plan management
-- Usage history and pagination
-
-## Automated Tests
-
-The project includes 57 automated tests:
-
-- 23 Unit Tests
-- 34 Integration Tests
-
-Run the tests:
-
-npm run test:unit
-npm run test:integration
-
-Integration tests require the PostgreSQL test container.
-
-## Additional API Endpoints
-
-GET /accounts/me/plan
-GET /users/:userId
-
-These endpoints expose active plan information.
+Production account provisioning, credential rotation, and operational security hardening are documented as future improvements.
 
 ## Example Client
 
-Run the demonstration client:
+The repository contains a working CLI client that simulates document processing.
 
+It demonstrates users sharing one account but having different individual quotas.
+
+### Demo Scenario
+
+| Action | Expected Result |
+|---|---|
+| Alice consumes 10 units | Accepted |
+| Alice submits another request | Rejected by user monthly allowance |
+| Bob consumes 20 units | Accepted |
+| Bob submits another request | Rejected by shared account allowance |
+| Account allowance changes from 30 to 50 | Plan update succeeds |
+| Bob consumes another unit | Accepted |
+
+### Final Usage
+
+| Owner | Consumed | Remaining |
+|---|---:|---:|
+| Account | 31 | 19 |
+| Alice | 10 | 0 |
+| Bob | 21 | 79 |
+
+Run:
+
+```bash
 docker compose run --rm example-client
+```
+
+The document processing action is simulated. Actual document uploads and processing are outside the project scope.
+
+## Automated Testing
+
+The project contains **57 automated tests**.
+
+| Test Suite | Tests |
+|---|---:|
+| Unit Tests | 23 |
+| Integration Tests | 34 |
+| **Total** | **57** |
+
+### Test Coverage
+
+- Input and quota rule validation
+- API-key authentication
+- Account isolation
+- Database migrations and predefined plans
+- Account and user quota enforcement
+- Atomic usage updates
+- Concurrent consumption requests
+- Shared account allowance protection
+- Idempotent request retries
+- Request ID conflicts
+- Accepted and rejected decision persistence
+- Plan assignment and updates
+- Plan version checks
+- Plan inspection endpoints
+- PostgreSQL integer boundary validation
+- Historical usage and pagination
+- User directory authentication and isolation
+
+### Start the Test Database
+
+```bash
+docker compose -f compose.test.yml up -d --wait
+```
+
+### Run Unit Tests
+
+```bash
+npm run test:unit
+```
+
+### Run Integration Tests
+
+```bash
+npm run test:integration
+```
+
+### Run All Tests
+
+```bash
+npm run test:all
+```
+
+### Run TypeScript Type Checking
+
+```bash
+npm run typecheck
+```
+
+Integration tests use a dedicated PostgreSQL test database separate from the application database.
+
+## Performance and Load Testing
+
+Load tests evaluate throughput, latency, concurrency behavior, and quota correctness.
+
+The load-testing scripts and recorded reports are available under:
+
+`tests/load/`
+
+### Recorded Baseline
+
+Test configuration:
+
+- 2,000 measured requests
+- 20 concurrent workers
+- 10 users
+- PostgreSQL 17
+- One Node.js API instance
+- Local Docker environment
+
+### Results
+
+| Metric | Result |
+|---|---:|
+| Measured Requests | 2,000 |
+| Successful Requests | 2,000 |
+| Unexpected Failures | 0 |
+| Throughput | 208.24 requests/sec |
+| P50 Latency | 93.53 ms |
+| P95 Latency | 110.80 ms |
+| P99 Latency | 125.61 ms |
+
+### Additional Load Scenarios
+
+The project also tests:
+
+- Shared account quota contention
+- Individual user quota contention
+- Concurrent idempotent request retries
+
+These scenarios verified correct usage totals and expected rejection outcomes under the recorded workloads.
+
+### Reproduce Load Tests
+
+Start the backend:
+
+```bash
+docker compose up -d --build --wait api
+```
+
+Run the baseline:
+
+```bash
+npx ts-node tests/load/consumption.load.ts
+```
+
+Run contention scenarios:
+
+```bash
+npx ts-node tests/load/contention.load.ts
+```
+
+See [Load Testing Documentation](tests/load/README.md) for the full methodology, raw results, configuration, and limitations.
+
+The measurements describe a local test environment and should not be interpreted as production capacity guarantees.
+
+## Continuous Integration
+
+The project uses GitHub Actions for Continuous Integration.
+
+Workflow file:
+
+`.github/workflows/ci.yml`
+
+The CI pipeline runs on pushes and pull requests targeting `main` or `develop`.
+
+### CI Pipeline
+
+1. Check out the repository
+2. Configure Node.js 24
+3. Install dependencies
+4. Run TypeScript type checking
+5. Start the isolated PostgreSQL test database
+6. Execute automated unit and integration tests
+7. Build and start the application with Docker Compose
+8. Execute the working example client
+9. Clean up containers and test resources
+
+The pipeline provides automated verification before code changes are merged.
+
+**Note:** The project implements CI, not automated production deployment (CD).
+
+## Engineering Decisions and Trade-offs
+
+### Transactional Consistency
+
+Account and user usage updates are executed atomically to avoid partial deductions.
+
+### Pessimistic Concurrency Control
+
+Database row locking protects shared quota balances, prioritizing correctness over maximum throughput for a single highly active account.
+
+### Idempotency
+
+Persisted consumption decisions protect against double charging when clients retry requests.
+
+### Configurable Plans
+
+Plan definitions are stored in PostgreSQL, allowing rule changes without redeployment.
+
+### Monthly Usage Records
+
+Usage is stored by UTC month rather than reset using scheduled jobs.
+
+### Account Isolation
+
+API-key authentication determines ownership, and queries enforce account boundaries.
+
+### Scope Management
+
+The project prioritizes a reliable, tested core implementation over additional infrastructure and operational features outside the assignment requirements.
+
+## Known Limitations
+
+- Public account creation is intended for the local demonstration workflow and is not hardened for production provisioning.
+- Docker Compose credentials and exposed ports are configured for local development.
+- API-key rotation and revocation are not implemented.
+- History and idempotency records have no automatic retention policy.
+- Historical queries do not reconstruct the plan limits that were assigned during a previous month.
+- Document processing is simulated.
+- Load tests were performed in a local, single-instance environment.
+- The browser dashboard is a demonstration interface rather than a production administration portal.
+- Advanced monitoring, production secrets management, and distributed deployment are not implemented.
+
+## Future Improvements
+
+The following enhancements were identified for a production-oriented version of the service but were intentionally left outside the completed scope.
+
+### 1. Production Security and Provisioning
+
+- Protect public account creation with a controlled provisioning workflow.
+- Move deployment credentials into secure environment or secret management.
+- Restrict exposed ports and enforce appropriate network boundaries.
+- Introduce API-key rotation, revocation, and rate limiting.
+
+### 2. Database Query Optimization
+
+- Analyze history queries using `EXPLAIN ANALYZE`.
+- Improve indexing for month filtering and processing-time ordering.
+- Evaluate indexed columns or expression indexes instead of relying only on JSONB-based history queries.
+
+### 3. Advanced Concurrency Testing
+
+- Test behavior at UTC month boundaries.
+- Test plan updates occurring concurrently with consumption requests.
+- Verify competing plan updates using the same expected version.
+
+### 4. Multi-instance API Testing
+
+- Run multiple API instances against a shared PostgreSQL database.
+- Verify that transactions, locking, and idempotency remain correct across independent application instances.
+- Measure contention and database connection usage.
+
+### 5. Observability and Maintainability
+
+- Introduce structured application logging.
+- Add correlation/request IDs across API operations.
+- Measure database transaction and lock-wait latency.
+- Improve naming and formatting consistency.
+- Refactor large frontend modules into smaller maintainable components.
+
+### 6. Documentation and Operational Readiness
+
+- Expand production deployment documentation.
+- Document operational monitoring and recovery procedures.
+- Extend performance testing to long-running and distributed workloads.
+
+These improvements represent potential future engineering work, not functionality claimed to be implemented.
+
+## Project Scope
+
+This project focuses on usage metering, quota decisions, and the reliability of those operations.
+
+Billing, payments, refunds, multi-resource billing, end-user authentication, role-based administration, and distributed infrastructure are outside the required scope.
+
+## Final Summary
+
+The Usage Metering & Quota Service demonstrates:
+
+- Backend API development with TypeScript and PostgreSQL
+- Transactional data consistency
+- Concurrent request handling
+- Idempotent consumption processing
+- Configurable business rules
+- Account-level data isolation
+- Automated and integration testing
+- Performance measurement
+- Docker-based application delivery
+- Continuous Integration with GitHub Actions
+
+The implementation emphasizes correctness, testability, and documented engineering trade-offs while keeping future production improvements clearly separated from the completed project.
